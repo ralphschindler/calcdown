@@ -1,0 +1,8 @@
+
+services:
+  php:
+    image: ghcr.io/xdock/php-app:8.4-2025.10
+    environment:
+      APP_ENV: local
+    volumes:
+      - ./:/app
