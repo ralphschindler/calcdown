@@ -18,4 +18,34 @@ it('parses calcdown blocks (muli-line) correctly', function (string $block, arra
             ['expression' => 'price + 8%', 'result' => 4.32, 'units' => 'USD'],
         ],
     ],
+    [
+        "2 + 2\n\n5 * 3",
+        [
+            ['expression' => '2 + 2', 'result' => 4, 'units' => null],
+            ['expression' => '5 * 3', 'result' => 15, 'units' => null],
+        ],
+    ],
+    [
+        "a = 10\nb = 3\na % b",
+        [
+            ['expression' => 'a = 10', 'result' => 10, 'units' => null, 'assigned_variables' => ['a' => 10]],
+            ['expression' => 'b = 3', 'result' => 3, 'units' => null, 'assigned_variables' => ['b' => 3]],
+            ['expression' => 'a % b', 'result' => 1, 'units' => null],
+        ],
+    ],
 ]);
+
+it('returns null for empty block finalLine', function (): void {
+    $parser = new CalcdownParser;
+    $block = $parser->parseBlock('');
+
+    expect($block->finalLine())->toBeNull();
+});
+
+it('returns finalLine for non-empty block', function (): void {
+    $parser = new CalcdownParser;
+    $block = $parser->parseBlock('2 + 2');
+
+    expect($block->finalLine())->not->toBeNull();
+    expect($block->finalLine()->result)->toBe(4);
+});

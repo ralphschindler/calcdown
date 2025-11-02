@@ -139,4 +139,18 @@ it('parses calcdown lines correctly', function (string $string, array $expected)
             ['type' => 'error', 'value' => 'invalid_token', 'message' => 'Unrecognized token: invalid_token'],
         ],
     ],
+    [
+        '2 & 3', // invalid character
+        [
+            ['type' => 'number', 'value' => '2', 'units' => null],
+            ['type' => 'error', 'value' => '&', 'message' => 'Unrecognized token: &'],
+        ],
+    ],
+    [
+        '5x', // operator directly after number
+        [
+            ['type' => 'number', 'value' => '5', 'units' => null],
+            ['type' => 'operator', 'value' => 'x'],
+        ],
+    ],
 ]);
