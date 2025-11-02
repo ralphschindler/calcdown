@@ -46,7 +46,7 @@ total = tax in EUR
 ## Installation
 
 ```bash
-composer require your-vendor/calcdown
+composer require ralphschindler/calcdown
 ```
 
 ## Quick Start
