@@ -7,7 +7,7 @@ namespace Calcdown;
 class LineEvaluation
 {
     /**
-     * @param array<string, int|float|string> $assignedVariables
+     * @param  array<string, int|float|string>  $assignedVariables
      */
     public function __construct(
         public string $expression,

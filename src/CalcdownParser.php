@@ -35,7 +35,7 @@ class CalcdownParser
     }
 
     /**
-     * @param array<string, array{value: int|float|string, units: string|null}> $variables
+     * @param  array<string, array{value: int|float|string, units: string|null}>  $variables
      */
     public function parseLine(string $line, array $variables = []): LineEvaluation
     {
@@ -111,7 +111,7 @@ class CalcdownParser
     }
 
     /**
-     * @param array<array{type: string, value: mixed, units?: string|null, target_units?: string}> $tokens
+     * @param  array<array{type: string, value: mixed, units?: string|null, target_units?: string}>  $tokens
      * @return array{value: int|float|string, units: string|null}
      */
     private function evaluateTokens(array $tokens): array
@@ -125,8 +125,8 @@ class CalcdownParser
                 // Answer: Y / (X/100) = Y * (100/X)
                 $percentage = is_numeric($tokens[0]['value']) ? (float) $tokens[0]['value'] : 0.0;
                 $nextIndex = is_int($index) ? $index + 1 : 0;
-                $result = isset($tokens[$nextIndex]['value']) && is_numeric($tokens[$nextIndex]['value']) 
-                    ? (float) $tokens[$nextIndex]['value'] 
+                $result = isset($tokens[$nextIndex]['value']) && is_numeric($tokens[$nextIndex]['value'])
+                    ? (float) $tokens[$nextIndex]['value']
                     : 0.0;
                 $unit = $tokens[$nextIndex]['units'] ?? null;
 
@@ -239,7 +239,7 @@ class CalcdownParser
             } elseif ($token['type'] === 'operator') {
                 $b = array_pop($stack);
                 $a = array_pop($stack);
-                
+
                 if ($a === null || $b === null) {
                     continue;
                 }
@@ -280,7 +280,7 @@ class CalcdownParser
 
                 $aValue = is_numeric($a['value']) ? (float) $a['value'] : 0.0;
                 $bValue = is_numeric($b['value']) ? (float) $b['value'] : 0.0;
-                
+
                 $result = match ($opValue) {
                     '+' => $aValue + $bValue,
                     '-' => $aValue - $bValue,
@@ -316,6 +316,7 @@ class CalcdownParser
         // Handle date formatting
         if (($finalResult['units'] ?? null) === 'date') {
             $dateValue = is_numeric($finalResult['value']) ? (int) $finalResult['value'] : 0;
+
             return ['value' => date('Y-m-d', $dateValue), 'units' => 'date'];
         }
 

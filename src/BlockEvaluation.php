@@ -7,7 +7,7 @@ namespace Calcdown;
 class BlockEvaluation
 {
     /**
-     * @param array<LineEvaluation> $lines
+     * @param  array<LineEvaluation>  $lines
      */
     public function __construct(
         public array $lines,
