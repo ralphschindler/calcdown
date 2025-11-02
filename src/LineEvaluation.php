@@ -6,6 +6,9 @@ namespace Calcdown;
 
 class LineEvaluation
 {
+    /**
+     * @param array<string, int|float|string> $assignedVariables
+     */
     public function __construct(
         public string $expression,
         public int|float|string $result,
@@ -13,6 +16,9 @@ class LineEvaluation
         public array $assignedVariables = [],
     ) {}
 
+    /**
+     * @return array{expression: string, result: int|float|string, units: string|null, assigned_variables?: array<string, int|float|string>}
+     */
     public function toArray(): array
     {
         $output = [

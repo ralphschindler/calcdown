@@ -34,6 +34,9 @@ class CalcdownParser
         return new BlockEvaluation(lines: $evaluatedLines);
     }
 
+    /**
+     * @param array<string, array{value: int|float|string, units: string|null}> $variables
+     */
     public function parseLine(string $line, array $variables = []): LineEvaluation
     {
         $expression = trim($line);
@@ -41,19 +44,20 @@ class CalcdownParser
 
         // Check for assignment
         $assignedVar = null;
+        /** @var int $assignmentIndex */
         $assignmentIndex = -1;
         foreach ($tokens as $index => $token) {
             if ($token['type'] === 'operator' && $token['value'] === '=') {
                 if ($index > 0 && $tokens[$index - 1]['type'] === 'identifier') {
-                    $assignedVar = $tokens[$index - 1]['value'];
-                    $assignmentIndex = $index;
+                    $assignedVar = is_string($tokens[$index - 1]['value']) ? $tokens[$index - 1]['value'] : null;
+                    $assignmentIndex = is_int($index) ? $index : -1;
                     break;
                 }
             }
         }
 
         // If assignment, remove variable name and = from tokens
-        if ($assignedVar !== null) {
+        if ($assignedVar !== null && $assignmentIndex >= 0) {
             $tokens = array_values(array_slice($tokens, $assignmentIndex + 1));
         }
 
@@ -67,7 +71,7 @@ class CalcdownParser
                         'value' => time(),
                         'units' => 'date',
                     ];
-                } elseif (isset($variables[$token['value']])) {
+                } elseif (is_string($token['value']) && isset($variables[$token['value']])) {
                     $token = [
                         'type' => 'number',
                         'value' => $variables[$token['value']]['value'],
@@ -92,6 +96,7 @@ class CalcdownParser
         $units = $evaluationResult['units'];
 
         // Build assigned variables array
+        /** @var array<string, int|float|string> $assignedVariables */
         $assignedVariables = [];
         if ($assignedVar !== null) {
             $assignedVariables[$assignedVar] = $result;
@@ -105,6 +110,10 @@ class CalcdownParser
         );
     }
 
+    /**
+     * @param array<array{type: string, value: mixed, units?: string|null, target_units?: string}> $tokens
+     * @return array{value: int|float|string, units: string|null}
+     */
     private function evaluateTokens(array $tokens): array
     {
         // Handle special cases first
@@ -114,9 +123,12 @@ class CalcdownParser
             if ($token['type'] === 'operator' && $token['value'] === 'of_what_is') {
                 // Pattern: X% of what is Y
                 // Answer: Y / (X/100) = Y * (100/X)
-                $percentage = (float) $tokens[0]['value'];
-                $result = (float) $tokens[$index + 1]['value'];
-                $unit = $tokens[$index + 1]['units'] ?? null;
+                $percentage = is_numeric($tokens[0]['value']) ? (float) $tokens[0]['value'] : 0.0;
+                $nextIndex = is_int($index) ? $index + 1 : 0;
+                $result = isset($tokens[$nextIndex]['value']) && is_numeric($tokens[$nextIndex]['value']) 
+                    ? (float) $tokens[$nextIndex]['value'] 
+                    : 0.0;
+                $unit = $tokens[$nextIndex]['units'] ?? null;
 
                 $answer = $result / ($percentage / 100);
                 $answer = $answer == (int) $answer ? (int) $answer : round($answer, 2);
@@ -137,11 +149,11 @@ class CalcdownParser
             } elseif ($token['type'] === 'operator' && $token['value'] === 'convert') {
                 // Convert is a unary postfix operator - add directly to output
                 $output[] = $token;
-            } elseif ($token['type'] === 'operator' && isset($precedence[$token['value']])) {
+            } elseif ($token['type'] === 'operator' && is_string($token['value']) && isset($precedence[$token['value']])) {
                 while (
                     ! empty($operatorStack) &&
                     end($operatorStack)['value'] !== '(' &&
-                    isset($precedence[end($operatorStack)['value']]) &&
+                    array_key_exists(end($operatorStack)['value'], $precedence) &&
                     (
                         $precedence[end($operatorStack)['value']] > $precedence[$token['value']] ||
                         (
@@ -170,18 +182,25 @@ class CalcdownParser
         }
 
         // Evaluate RPN with unit tracking
+        /** @var array<array{value: int|float|string, units: string|null}> $stack */
         $stack = [];
         foreach ($output as $token) {
             if ($token['type'] === 'number') {
                 $stack[] = [
-                    'value' => (float) $token['value'],
+                    'value' => is_numeric($token['value']) ? (float) $token['value'] : 0.0,
                     'units' => $token['units'] ?? null,
                 ];
             } elseif ($token['type'] === 'operator' && $token['value'] === 'convert') {
                 // Unary postfix operator - converts the top of stack
                 $a = array_pop($stack);
-                $targetUnit = $token['target_units'];
-                $value = $a['value'];
+                if ($a === null) {
+                    continue;
+                }
+                $targetUnit = $token['target_units'] ?? null;
+                if ($targetUnit === null) {
+                    continue;
+                }
+                $value = is_numeric($a['value']) ? (float) $a['value'] : 0.0;
                 $sourceUnit = $a['units'];
 
                 // Currency conversion
@@ -220,6 +239,10 @@ class CalcdownParser
             } elseif ($token['type'] === 'operator') {
                 $b = array_pop($stack);
                 $a = array_pop($stack);
+                
+                if ($a === null || $b === null) {
+                    continue;
+                }
 
                 $opValue = $token['value'];
 
@@ -230,8 +253,8 @@ class CalcdownParser
 
                 // Handle date arithmetic
                 if (($a['units'] ?? null) === 'date' && $opValue === '+' && ($b['units'] ?? null) === 'days') {
-                    $days = $b['value'];
-                    $newDate = strtotime("+{$days} days", (int) $a['value']);
+                    $days = is_numeric($b['value']) ? (float) $b['value'] : 0.0;
+                    $newDate = strtotime("+{$days} days", is_numeric($a['value']) ? (int) $a['value'] : 0);
                     $stack[] = [
                         'value' => $newDate,
                         'units' => 'date',
@@ -243,8 +266,10 @@ class CalcdownParser
                 // Handle percentage
                 if (($b['units'] ?? null) === '%' && in_array($opValue, ['+', '-'])) {
                     // a +/- b% means a * (1 +/- b/100)
-                    $multiplier = $opValue === '+' ? (1 + $b['value'] / 100) : (1 - $b['value'] / 100);
-                    $result = $a['value'] * $multiplier;
+                    $aValue = is_numeric($a['value']) ? (float) $a['value'] : 0.0;
+                    $bValue = is_numeric($b['value']) ? (float) $b['value'] : 0.0;
+                    $multiplier = $opValue === '+' ? (1 + $bValue / 100) : (1 - $bValue / 100);
+                    $result = $aValue * $multiplier;
                     $stack[] = [
                         'value' => $result,
                         'units' => $a['units'],
@@ -253,13 +278,17 @@ class CalcdownParser
                     continue;
                 }
 
+                $aValue = is_numeric($a['value']) ? (float) $a['value'] : 0.0;
+                $bValue = is_numeric($b['value']) ? (float) $b['value'] : 0.0;
+                
                 $result = match ($opValue) {
-                    '+' => $a['value'] + $b['value'],
-                    '-' => $a['value'] - $b['value'],
-                    '*' => $a['value'] * $b['value'],
-                    '/' => $a['value'] / $b['value'],
-                    '%' => \MathPHP\Arithmetic::modulo((int) $a['value'], (int) $b['value']),
-                    '^' => pow($a['value'], $b['value']),
+                    '+' => $aValue + $bValue,
+                    '-' => $aValue - $bValue,
+                    '*' => $aValue * $bValue,
+                    '/' => $aValue / $bValue,
+                    '%' => \MathPHP\Arithmetic::modulo((int) $aValue, (int) $bValue),
+                    '^' => pow($aValue, $bValue),
+                    default => 0.0, // @codeCoverageIgnore
                 };
 
                 // Determine result units (prefer currency, then first non-null unit)
@@ -286,26 +315,30 @@ class CalcdownParser
         // Format final result
         // Handle date formatting
         if (($finalResult['units'] ?? null) === 'date') {
-            return ['value' => date('Y-m-d', (int) $finalResult['value']), 'units' => 'date'];
+            $dateValue = is_numeric($finalResult['value']) ? (int) $finalResult['value'] : 0;
+            return ['value' => date('Y-m-d', $dateValue), 'units' => 'date'];
         }
 
         // Handle currency - return numeric value with unit
         if (in_array($finalResult['units'] ?? null, ['USD', 'EUR', 'GBP'])) {
-            $amount = $finalResult['value'];
+            $amount = is_numeric($finalResult['value']) ? (float) $finalResult['value'] : 0.0;
             $amount = $amount == (int) $amount ? (int) $amount : $amount;
 
-            return ['value' => (string) $amount, 'units' => $finalResult['units']];
+            return ['value' => (string) $amount, 'units' => is_string($finalResult['units']) ? $finalResult['units'] : null];
         }
 
-        $result = $finalResult['value'];
+        $result = is_numeric($finalResult['value']) ? (float) $finalResult['value'] : 0.0;
 
         // Return integer if it's a whole number
         $result = $result == (int) $result ? (int) $result : $result;
 
-        return ['value' => $result, 'units' => $finalResult['units']];
+        return ['value' => $result, 'units' => is_string($finalResult['units']) ? $finalResult['units'] : null];
     }
 
-    public function tokenize($string): array
+    /**
+     * @return array<array{type: string, value: mixed, units?: string|null, target_units?: string, message?: string}>
+     */
+    public function tokenize(string $string): array
     {
         // Strip comments - anything after # (including #) is removed
         $commentPos = strpos($string, '#');
