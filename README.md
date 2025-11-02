@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/logo.svg" alt="Calcdown Logo" width="200">
+  <img src="docs/calcdown.png" alt="Calcdown Logo" width="200">
   
   # Calcdown
   
