@@ -2,7 +2,12 @@
 services:
   php:
     image: ghcr.io/xdock/php-app:8.4-2025.10
+    command: run-services web
     environment:
       APP_ENV: local
+      APP_NAME: calcdown
+    ports:
+      - "8000:80"
     volumes:
+      - .container/php/00_update_web_path.sh:/etc/my_init.d/00_update_web_path.sh
       - ./:/app

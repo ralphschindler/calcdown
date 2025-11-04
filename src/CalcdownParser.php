@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Calcdown;
 
+use MathPHP\Arithmetic;
+
 class CalcdownParser
 {
     public function parseBlock(string $block): BlockEvaluation
@@ -286,7 +288,7 @@ class CalcdownParser
                     '-' => $aValue - $bValue,
                     '*' => $aValue * $bValue,
                     '/' => $aValue / $bValue,
-                    '%' => \MathPHP\Arithmetic::modulo((int) $aValue, (int) $bValue),
+                    '%' => Arithmetic::modulo((int) $aValue, (int) $bValue),
                     '^' => pow($aValue, $bValue),
                     default => 0.0, // @codeCoverageIgnore
                 };
