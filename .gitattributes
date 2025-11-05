@@ -1,7 +1,5 @@
 /.github            export-ignore
-/.container         export-ignore
 /.php_cs            export-ignore
-/demo               export-ignore
 /docs               export-ignore
 /tests              export-ignore
 /scripts            export-ignore
