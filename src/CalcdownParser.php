@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Calcdown;
 
 use MathPHP\Arithmetic;
+use PhpUnitsOfMeasure\PhysicalQuantity\Length;
+use PhpUnitsOfMeasure\PhysicalQuantity\Mass;
+use PhpUnitsOfMeasure\PhysicalQuantity\Volume;
 
 class CalcdownParser
 {
@@ -220,20 +223,16 @@ class CalcdownParser
                     continue;
                 }
 
-                // Volume conversion: ml to teaspoons
-                if ($targetUnit === 'teaspoons' && $sourceUnit === 'ml') {
-                    $tsp = $value / (20 / 4.05); // Adjusted for precision
-                    $stack[] = ['value' => number_format($tsp, 2), 'units' => 'tsp'];
+                // Try unit conversions using php-units-of-measure
+                try {
+                    $converted = $this->convertUnits($value, $sourceUnit, $targetUnit);
+                    if ($converted !== null) {
+                        $stack[] = $converted;
 
-                    continue;
-                }
-
-                // Length conversion: cm to m
-                if ($targetUnit === 'm' && $sourceUnit === 'cm') {
-                    $meters = $value / 100;
-                    $stack[] = ['value' => round($meters, 2), 'units' => 'm'];
-
-                    continue;
+                        continue;
+                    }
+                } catch (\Exception $e) {
+                    // Conversion failed, fall through to default
                 }
 
                 // Default: just change the unit
@@ -254,9 +253,10 @@ class CalcdownParser
                 }
 
                 // Handle date arithmetic
-                if (($a['units'] ?? null) === 'date' && $opValue === '+' && ($b['units'] ?? null) === 'days') {
+                if (($a['units'] ?? null) === 'date' && in_array($opValue, ['+', '-']) && ($b['units'] ?? null) === 'days') {
                     $days = is_numeric($b['value']) ? (float) $b['value'] : 0.0;
-                    $newDate = strtotime("+{$days} days", is_numeric($a['value']) ? (int) $a['value'] : 0);
+                    $sign = $opValue === '+' ? '+' : '-';
+                    $newDate = strtotime("{$sign}{$days} days", is_numeric($a['value']) ? (int) $a['value'] : 0);
                     $stack[] = [
                         'value' => $newDate,
                         'units' => 'date',
@@ -429,7 +429,7 @@ class CalcdownParser
                     }
 
                     // Check if it's a known unit or operator
-                    $knownUnits = ['USD', 'EUR', 'GBP', 'cm', 'ml', 'teaspoons', 'days', 'm'];
+                    $knownUnits = ['USD', 'EUR', 'GBP', 'cm', 'ml', 'teaspoons', 'days', 'm', 'kg', 'lbs'];
                     $operators = ['in', 'times', 'on', 'of', 'is', 'x'];
 
                     if (in_array($unit, $knownUnits)) {
@@ -587,5 +587,61 @@ class CalcdownParser
         }
 
         return $tokens;
+    }
+
+    /**
+     * Convert units using php-units-of-measure library
+     *
+     * @return array{value: float|string, units: string}|null
+     */
+    private function convertUnits(float $value, ?string $sourceUnit, string $targetUnit): ?array
+    {
+        if ($sourceUnit === null) {
+            return null;
+        }
+
+        // Map common unit aliases to library unit names
+        $unitMap = [
+            'teaspoons' => 'tsp',
+        ];
+
+        $sourceUnit = $unitMap[$sourceUnit] ?? $sourceUnit;
+        $targetUnit = $unitMap[$targetUnit] ?? $targetUnit;
+
+        // Try Mass conversion (kg, lbs, etc.)
+        try {
+            $mass = new Mass($value, $sourceUnit);
+            $converted = $mass->toUnit($targetUnit);
+
+            return ['value' => round($converted, 2), 'units' => $targetUnit];
+        } catch (\Exception $e) {
+            // Not a mass unit, try next
+        }
+
+        // Try Length conversion (cm, m, inches, etc.)
+        try {
+            $length = new Length($value, $sourceUnit);
+            $converted = $length->toUnit($targetUnit);
+
+            return ['value' => round($converted, 2), 'units' => $targetUnit];
+        } catch (\Exception $e) {
+            // Not a length unit, try next
+        }
+
+        // Try Volume conversion (ml, teaspoons, etc.)
+        try {
+            $volume = new Volume($value, $sourceUnit);
+            $converted = $volume->toUnit($targetUnit);
+            // Special formatting for teaspoons to match expected output
+            if ($targetUnit === 'tsp') {
+                return ['value' => number_format($converted, 2), 'units' => 'tsp'];
+            }
+
+            return ['value' => round($converted, 2), 'units' => $targetUnit];
+        } catch (\Exception $e) {
+            // Not a volume unit
+        }
+
+        return null;
     }
 }
