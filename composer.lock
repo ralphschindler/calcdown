@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3bceaac6997114da52c26f4453cbb1ad",
+    "content-hash": "b9642a8edad24d69c83f39a8d72a0125",
     "packages": [
         {
             "name": "brick/math",
@@ -2739,6 +2739,59 @@
             "time": "2025-10-18T11:10:27+00:00"
         },
         {
+            "name": "php-units-of-measure/php-units-of-measure",
+            "version": "v2.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PhpUnitsOfMeasure/php-units-of-measure.git",
+                "reference": "cf1b83b1ef7615dd53f70864c9e7f496b1ec0fd1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PhpUnitsOfMeasure/php-units-of-measure/zipball/cf1b83b1ef7615dd53f70864c9e7f496b1ec0fd1",
+                "reference": "cf1b83b1ef7615dd53f70864c9e7f496b1ec0fd1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "replace": {
+                "triplepoint/php-units-of-measure": "*"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5",
+                "squizlabs/php_codesniffer": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PhpUnitsOfMeasure\\": "source/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jonathan Hanson",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A PHP library for converting between standard units of measure.",
+            "homepage": "https://github.com/PhpUnitsOfMeasure/php-units-of-measure",
+            "keywords": [
+                "conversion",
+                "data",
+                "measurements"
+            ],
+            "support": {
+                "issues": "https://github.com/PhpUnitsOfMeasure/php-units-of-measure/issues",
+                "source": "https://github.com/PhpUnitsOfMeasure/php-units-of-measure"
+            },
+            "time": "2025-04-30T23:02:43+00:00"
+        },
+        {
             "name": "phpoption/phpoption",
             "version": "1.9.4",
             "source": {
@@ -3350,21 +3403,22 @@
         },
         {
             "name": "ralphschindler/calcdown",
-            "version": "v0.1.0",
+            "version": "v0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ralphschindler/calcdown.git",
-                "reference": "cde6d9c228d872d2a5b5730f8d27a0c8434bf864"
+                "reference": "0481ec4ef6c0a45b23da07d27cfeb4c7e1e51daf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ralphschindler/calcdown/zipball/cde6d9c228d872d2a5b5730f8d27a0c8434bf864",
-                "reference": "cde6d9c228d872d2a5b5730f8d27a0c8434bf864",
+                "url": "https://api.github.com/repos/ralphschindler/calcdown/zipball/0481ec4ef6c0a45b23da07d27cfeb4c7e1e51daf",
+                "reference": "0481ec4ef6c0a45b23da07d27cfeb4c7e1e51daf",
                 "shasum": ""
             },
             "require": {
                 "markrogoyski/math-php": "2.*",
-                "php": "^8.4.0"
+                "php": "^8.4.0",
+                "php-units-of-measure/php-units-of-measure": "^2.2"
             },
             "require-dev": {
                 "laravel/pint": "^1.24.0",
@@ -3397,9 +3451,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ralphschindler/calcdown/issues",
-                "source": "https://github.com/ralphschindler/calcdown/tree/v0.1.0"
+                "source": "https://github.com/ralphschindler/calcdown/tree/v0.1.1"
             },
-            "time": "2025-11-02T15:36:53+00:00"
+            "time": "2025-11-05T15:47:02+00:00"
         },
         {
             "name": "ramsey/collection",
@@ -9584,7 +9638,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.4"
+        "php": "^8.2"
     },
     "platform-dev": {},
     "plugin-api-version": "2.6.0"
